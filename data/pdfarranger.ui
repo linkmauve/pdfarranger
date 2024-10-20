@@ -22,8 +22,7 @@ along with PDF Arranger.  If not, see <http://www.gnu.org/licenses/>.
   <object class="GtkApplicationWindow" id="main_window">
     <child type="titlebar">
       <object class="GtkHeaderBar" id="header_bar">
-        <property name="spacing">4</property>
-        <child>
+        <child type="start">
           <object class="GtkBox">
             <property name="homogeneous">1</property>
             <style>
@@ -79,9 +78,8 @@ along with PDF Arranger.  If not, see <http://www.gnu.org/licenses/>.
             </child>
           </object>
         </child>
-        <child>
+        <child type="end">
           <object class="GtkMenuButton" id="main_menu_button">
-            <property name="use_popover">False</property>
             <property name="tooltip_text" translatable="1">Main Menu</property>
             <child>
               <object class="GtkImage">
@@ -89,11 +87,8 @@ along with PDF Arranger.  If not, see <http://www.gnu.org/licenses/>.
               </object>
             </child>
           </object>
-          <packing>
-            <property name="pack_type">end</property>
-          </packing>
         </child>
-        <child>
+        <child type="end">
           <object class="GtkBox">
             <property name="homogeneous">1</property>
             <style>
@@ -130,11 +125,8 @@ along with PDF Arranger.  If not, see <http://www.gnu.org/licenses/>.
               </object>
             </child>
           </object>
-          <packing>
-            <property name="pack_type">end</property>
-          </packing>
         </child>
-        <child>
+        <child type="end">
           <object class="GtkBox">
             <property name="homogeneous">1</property>
             <style>
@@ -173,9 +165,6 @@ along with PDF Arranger.  If not, see <http://www.gnu.org/licenses/>.
               </object>
             </child>
           </object>
-          <packing>
-            <property name="pack_type">end</property>
-          </packing>
         </child>
       </object>
     </child>
