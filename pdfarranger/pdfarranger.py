@@ -101,21 +101,10 @@ import gi
 
 # check that we don't need GObject.threads_init()
 gi.check_version('3.10.2')
-gi.require_version('Gtk', '3.0')
+gi.require_version('Gtk', '4.0')
+gi.require_version('Adw', '1')
 from gi.repository import Gtk
-try:
-    gi.require_version('Handy', '1')
-    from gi.repository import Handy
-except ValueError:
-    Handy = None
-
-if Gtk.check_version(3, 20, 0):
-    raise Exception('You do not have the required version of GTK+ installed. ' +
-                    'Installed GTK+ version is ' +
-                    '.'.join([str(Gtk.get_major_version()),
-                              str(Gtk.get_minor_version()),
-                              str(Gtk.get_micro_version())]) +
-                    '. Required GTK+ version is 3.20 or higher.')
+from gi.repository import Adw
 
 from gi.repository import Gdk
 from gi.repository import GObject  # for using custom signals
@@ -231,13 +220,8 @@ class PdfArranger(Gtk.Application):
     MODEL_ROW_EXTERN = 1002
     # Drag and drop ID for pages coming from a non-pdfarranger application
     TEXT_URI_LIST = 1003
-    TARGETS_IV = [Gtk.TargetEntry.new('MODEL_ROW_INTERN', Gtk.TargetFlags.SAME_WIDGET,
-                                      MODEL_ROW_INTERN),
-                  Gtk.TargetEntry.new('MODEL_ROW_EXTERN', Gtk.TargetFlags.OTHER_APP,
-                                      MODEL_ROW_EXTERN)]
-    TARGETS_SW = [Gtk.TargetEntry.new('text/uri-list', 0, TEXT_URI_LIST),
-                  Gtk.TargetEntry.new('MODEL_ROW_EXTERN', Gtk.TargetFlags.OTHER_APP,
-                                      MODEL_ROW_EXTERN)]
+    TARGETS_IV = []
+    TARGETS_SW = []
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, application_id="com.github.jeromerobert.pdfarranger",
@@ -301,7 +285,7 @@ class PdfArranger(Gtk.Application):
         self.layer_pos = 0.5, 0.5
 
         # Clipboard for cut copy paste
-        self.clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
+        self.clipboard = Gdk.Display.get_default().get_clipboard()
 
         self.add_arguments()
 
@@ -346,49 +330,43 @@ class PdfArranger(Gtk.Application):
         return f
 
     def set_color_scheme(self):
-        if Handy:
-            try:
-                scheme = Handy.ColorScheme.PREFER_LIGHT
-                if os.name == 'nt' and darkdetect.isDark():
-                    scheme = Handy.ColorScheme.PREFER_DARK
-                theme = self.config.theme()
-                if theme == 'dark':
-                    scheme = Handy.ColorScheme.FORCE_DARK
-                elif theme == 'light':
-                    scheme = Handy.ColorScheme.FORCE_LIGHT
-                Handy.StyleManager.get_default().set_color_scheme(scheme)
-            except AttributeError:
-                # This libhandy is too old. 1.5.90 needed ?
-                pass
+        scheme = Adw.ColorScheme.PREFER_LIGHT
+        if os.name == 'nt' and darkdetect.isDark():
+            scheme = Adw.ColorScheme.PREFER_DARK
+        theme = self.config.theme()
+        if theme == 'dark':
+            scheme = Adw.ColorScheme.FORCE_DARK
+        elif theme == 'light':
+            scheme = Adw.ColorScheme.FORCE_LIGHT
+        Adw.StyleManager.get_default().set_color_scheme(scheme)
 
     def __create_main_window(self):
-        """Create the Gtk.ApplicationWindow or Handy.ApplicationWindow"""
+        """Create the Gtk.ApplicationWindow or Adw.ApplicationWindow"""
         b = Gtk.Builder()
         b.set_translation_domain(DOMAIN)
         with open(self.__resource_path(DOMAIN + ".ui")) as ff:
             s = ff.read()
-            if Handy:
-                Handy.init()
-                s = s.replace("GtkHeaderBar", "HdyHeaderBar")
+            if Adw:
+                Adw.init()
+                s = s.replace("GtkHeaderBar", "AdwHeaderBar")
             b.add_from_string(s)
-        b.connect_signals(self)
+        #b.connect_signals(self)
         self.uiXML = b
         self.window = self.uiXML.get_object("main_window")
-        if Handy:
+        if Adw:
             self.set_color_scheme()
             # Add an intermediate vertical box
             box = Gtk.Box()
             box.props.orientation = Gtk.Orientation.VERTICAL
             hd = self.uiXML.get_object("header_bar")
             mb = self.uiXML.get_object("main_box")
-            self.window.remove(hd)
-            self.window.remove(mb)
-            # Replace the Gtk.ApplicationWindow by the Handy one
-            self.window = Handy.ApplicationWindow()
-            box.add(hd)
-            mb.props.expand = True
-            box.add(mb)
-            self.window.add(box)
+            self.window.set_titlebar(None)
+            self.window.set_child(None)
+            # Replace the Gtk.ApplicationWindow by the Adw one
+            self.window = Adw.ApplicationWindow()
+            box.append(hd)
+            box.append(mb)
+            self.window.set_content(box)
         self.window.set_default_icon_name(ICON_ID)
         return b
 
@@ -396,15 +374,14 @@ class PdfArranger(Gtk.Application):
         b = Gtk.Builder()
         b.set_translation_domain(DOMAIN)
         b.add_from_file(self.__resource_path("menu.ui"))
-        b.connect_signals(self)
+        #b.connect_signals(self)
         self.config.set_actions(b)
-        self.popup = Gtk.Menu.new_from_model(b.get_object("popup_menu"))
-        self.popup.attach_to_widget(self.window, None)
+        self.popup = Gtk.PopoverMenu.new_from_model(b.get_object("popup_menu"))
         main_menu = self.uiXML.get_object("main_menu_button")
         main_menu.set_menu_model(b.get_object("main_menu"))
 
     def __create_actions(self):
-        # Both Handy.ApplicationWindow and Gtk.Application are Gio.ActionMap. Some action are window
+        # Both Adw.ApplicationWindow and Gtk.Application are Gio.ActionMap. Some action are window
         # related some other are application related. As pdfarrager is a single window app does not
         # matter that much.
         self.actions = [
@@ -521,8 +498,8 @@ class PdfArranger(Gtk.Application):
         self.silent_render()
 
     def on_action_preferences(self, _action, _option, _unknown):
-        handy_available = True if Handy else False
-        self.config.preferences_dialog(self.window, localedir, handy_available)
+        adw_available = True if Adw else False
+        self.config.preferences_dialog(self.window, localedir, adw_available)
         self.set_color_scheme()
 
     def on_action_print(self, _action, _option, _unknown):
@@ -530,7 +507,7 @@ class PdfArranger(Gtk.Application):
 
     @staticmethod
     def __create_filters(file_type_list):
-        filter_list = []
+        filter_list = Gio.ListStore()
         f_supported = Gtk.FileFilter()
         f_supported.set_name(_('All supported files'))
         filter_list.append(f_supported)
@@ -560,8 +537,8 @@ class PdfArranger(Gtk.Application):
         return filter_list
 
     def set_title(self, title, subtitle = None):
-        self.uiXML.get_object('header_bar').set_title(title)
-        self.uiXML.get_object('header_bar').set_subtitle(subtitle)
+        self.window.set_title(title)
+        #self.uiXML.get_object('header_bar').set_subtitle(subtitle)
 
     def do_activate(self):
         """ https://lazka.github.io/pgi-docs/Gio-2.0/classes/Application.html#Gio.Application.do_activate """
@@ -570,38 +547,36 @@ class PdfArranger(Gtk.Application):
         iconsdir = os.path.join(sharedir, 'icons')
         if not os.path.exists(iconsdir):
             iconsdir = os.path.join(sharedir, 'data', 'icons')
-        Gtk.IconTheme.get_default().append_search_path(iconsdir)
+        #Gtk.IconTheme.get_default().append_search_path(iconsdir)
         self.__create_main_window()
         self.set_title(APPNAME)
-        self.window.set_border_width(0)
         self.window.set_application(self)
         if self.config.maximized():
             self.window.maximize()
         self.window.set_default_size(*self.config.window_size())
-        self.window.connect('delete_event', self.on_quit)
-        self.window.connect('focus_in_event', self.window_focus_in_out_event)
-        self.window.connect('focus_out_event', self.window_focus_in_out_event)
-        self.window.connect('configure_event', self.window_configure_event)
+        self.window.connect('unrealize', self.on_quit)
+        self.window.connect('activate-focus', self.window_focus_in_out_event)
+        #self.window.connect('configure_event', self.window_configure_event)
 
         if hasattr(GLib, "unix_signal_add"):
             GLib.unix_signal_add(GLib.PRIORITY_DEFAULT, signal.SIGINT, self.close_application)
 
         # Create a scrolled window to hold the thumbnails-container
         self.sw = self.uiXML.get_object('scrolledwindow')
-        self.sw.drag_dest_set(Gtk.DestDefaults.HIGHLIGHT |
-                              Gtk.DestDefaults.DROP,
-                              self.TARGETS_SW,
-                              Gdk.DragAction.COPY)
-        self.sw.connect('drag_data_received', self.sw_dnd_received_data)
-        self.sw.connect('button_press_event', self.sw_button_press_event)
-        self.sw.connect('scroll_event', self.sw_scroll_event)
+        #self.sw.drag_dest_set(Gtk.DestDefaults.HIGHLIGHT |
+        #                      Gtk.DestDefaults.DROP,
+        #                      self.TARGETS_SW,
+        #                      Gdk.DragAction.COPY)
+        #self.sw.connect('drag_data_received', self.sw_dnd_received_data)
+        #self.sw.connect('button_press_event', self.sw_button_press_event)
+        #self.sw.connect('scroll_event', self.sw_scroll_event)
 
         # Create ListStore model and IconView
         self.model = Gtk.ListStore(GObject.TYPE_PYOBJECT, str)
         self.undomanager = undo.Manager(self)
         self.zoom_set(self.config.zoom_level())
 
-        self.iconview = Gtk.IconView(self.model)
+        self.iconview = Gtk.IconView.new_with_model(self.model)
         self.iconview.clear()
         self.iconview.set_item_width(-1)
 
@@ -615,30 +590,30 @@ class PdfArranger(Gtk.Application):
         cell_text_renderer.props.ellipsize = Pango.EllipsizeMode.MIDDLE
 
         self.iconview.set_selection_mode(Gtk.SelectionMode.MULTIPLE)
-        self.iconview.enable_model_drag_source(Gdk.ModifierType.BUTTON1_MASK,
-                                               self.TARGETS_IV,
-                                               Gdk.DragAction.COPY |
-                                               Gdk.DragAction.MOVE)
-        self.iconview.enable_model_drag_dest(self.TARGETS_IV,
-                                             Gdk.DragAction.COPY |
-                                             Gdk.DragAction.MOVE)
-        self.iconview.connect('drag_begin', self.iv_drag_begin)
-        self.iconview.connect('drag_data_get', self.iv_dnd_get_data)
-        self.iconview.connect('drag_data_received', self.iv_dnd_received_data)
-        self.iconview.connect('drag_data_delete', self.iv_dnd_data_delete)
-        self.iconview.connect('drag_motion', self.iv_dnd_motion)
-        self.iconview.connect('drag_leave', self.iv_dnd_leave_end)
-        self.iconview.connect('drag_end', self.iv_dnd_leave_end)
-        self.iconview.connect('button_press_event', self.iv_button_press_event)
-        self.iconview.connect('motion_notify_event', self.iv_motion)
-        self.iconview.connect('button_release_event', self.iv_button_release_event)
-        self.iconview.connect('style_updated', self.set_text_renderer_cell_height)
+        #self.iconview.enable_model_drag_source(Gdk.ModifierType.BUTTON1_MASK,
+        #                                       self.TARGETS_IV,
+        #                                       Gdk.DragAction.COPY |
+        #                                       Gdk.DragAction.MOVE)
+        #self.iconview.enable_model_drag_dest(self.TARGETS_IV,
+        #                                     Gdk.DragAction.COPY |
+        #                                     Gdk.DragAction.MOVE)
+        #self.iconview.connect('drag_begin', self.iv_drag_begin)
+        #self.iconview.connect('drag_data_get', self.iv_dnd_get_data)
+        #self.iconview.connect('drag_data_received', self.iv_dnd_received_data)
+        #self.iconview.connect('drag_data_delete', self.iv_dnd_data_delete)
+        #self.iconview.connect('drag_motion', self.iv_dnd_motion)
+        #self.iconview.connect('drag_leave', self.iv_dnd_leave_end)
+        #self.iconview.connect('drag_end', self.iv_dnd_leave_end)
+        #self.iconview.connect('button_press_event', self.iv_button_press_event)
+        #self.iconview.connect('motion_notify_event', self.iv_motion)
+        #self.iconview.connect('button_release_event', self.iv_button_release_event)
+        #self.iconview.connect('style_updated', self.set_text_renderer_cell_height)
         self.id_selection_changed_event = self.iconview.connect('selection_changed',
                                                           self.iv_selection_changed_event)
-        self.iconview.connect('key_press_event', self.iv_key_press_event)
-        self.iconview.connect('size_allocate', self.iv_size_allocate)
+        #self.iconview.connect('key_press_event', self.iv_key_press_event)
+        #self.iconview.connect('size_allocate', self.iv_size_allocate)
 
-        self.sw.add(self.iconview)
+        self.sw.set_child(self.iconview)
 
         # Status bar to the left
         self.status_bar = self.uiXML.get_object('statusbar')
@@ -648,24 +623,25 @@ class PdfArranger(Gtk.Application):
 
         # Vertical scrollbar
         vscrollbar = self.sw.get_vscrollbar()
-        vscrollbar.connect('value_changed', self.vscrollbar_value_changed)
-        vscrollbar.props.adjustment.step_increment = 75
+        vscrollbar_adjustment = vscrollbar.get_adjustment()
+        vscrollbar_adjustment.connect('notify::value', self.vscrollbar_value_changed)
+        vscrollbar_adjustment.set_step_increment(75)
 
-        self.window.show_all()
+        self.window.show()
 
         # Change iconview color background
         style_context_sw = self.sw.get_style_context()
-        color_selected = self.iconview.get_style_context() \
-            .get_background_color(Gtk.StateFlags.SELECTED)
-        color_prelight = color_selected.copy()
-        color_prelight.alpha = 0.3
-        for state in (Gtk.StateFlags.NORMAL, Gtk.StateFlags.ACTIVE):
-            self.iconview.override_background_color(
-                state, style_context_sw.get_background_color(state))
-        self.iconview.override_background_color(Gtk.StateFlags.SELECTED,
-                                                color_selected)
-        self.iconview.override_background_color(Gtk.StateFlags.PRELIGHT,
-                                                color_prelight)
+        #color_selected = self.iconview.get_style_context() \
+        #    .get_background_color(Gtk.StateFlags.SELECTED)
+        #color_prelight = color_selected.copy()
+        #color_prelight.alpha = 0.3
+        #for state in (Gtk.StateFlags.NORMAL, Gtk.StateFlags.ACTIVE):
+        #    self.iconview.override_background_color(
+        #        state, style_context_sw.get_background_color(state))
+        #self.iconview.override_background_color(Gtk.StateFlags.SELECTED,
+        #                                        color_selected)
+        #self.iconview.override_background_color(Gtk.StateFlags.PRELIGHT,
+        #                                        color_prelight)
 
         # Set cursor look and hide overshoot gradient
         style_provider = Gtk.CssProvider()
@@ -675,15 +651,15 @@ class PdfArranger(Gtk.Application):
             outline-style: dashed;
             outline-offset: -2px;
             outline-width: 2px;
-            -gtk-outline-radius: 2px;
+            /* -gtk-outline-radius: 2px; */
         }
         scrolledwindow overshoot {
             background: none;
         }
         """
         style_provider.load_from_data(bytes(css_data.encode()))
-        Gtk.StyleContext.add_provider_for_screen(
-            Gdk.Screen.get_default(),
+        Gtk.StyleContext.add_provider_for_display(
+            Gdk.Display.get_default(),
             style_provider,
             Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
 
@@ -787,8 +763,8 @@ class PdfArranger(Gtk.Application):
 
     def render(self):
         self.render_id = None
-        if not self.sw.is_sensitive():
-            return
+        #if not self.sw.is_sensitive():
+        #    return
         alive = self.quit_rendering()
         if alive:
             self.silent_render()
@@ -839,7 +815,7 @@ class PdfArranger(Gtk.Application):
                     self._th().model_lock.release()
         return __RenderLock(self)
 
-    def vscrollbar_value_changed(self, _vscrollbar):
+    def vscrollbar_value_changed(self, _adjustment, _value):
         """Render when vertical scrollbar value has changed."""
         self.silent_render()
 
@@ -927,8 +903,8 @@ class PdfArranger(Gtk.Application):
             else:
                 self.iconview.select_path(path)
                 self.iconview.unselect_path(path)
-        ac = self.iconview.get_accessible().ref_accessible_child(path.get_indices()[0])
-        ac.set_description(page.description)
+        #ac = self.iconview.get_accessible().ref_accessible_child(path.get_indices()[0])
+        #ac.set_description(page.description)
 
     def get_visible_range2(self):
         """Get range of items visible in window.
@@ -982,14 +958,14 @@ class PdfArranger(Gtk.Application):
             #  + min_col_spacing * (col_num+1) = iw_width
             col_num = (iw_width - 2 * min_margin - min_col_spacing) //\
                       (padded_cell_width + min_col_spacing)
-            spacing = (iw_width - col_num * padded_cell_width - 2 * min_margin) // (col_num + 1)
-            margin = (iw_width - col_num * (padded_cell_width + spacing) + spacing) // 2
-            if col_num == 0:
-                col_num = 1
-                margin = 6
-            self.iconview.set_columns(col_num)
-            self.iconview.set_column_spacing(spacing)
-            self.iconview.set_margin(margin)
+            #spacing = (iw_width - col_num * padded_cell_width - 2 * min_margin) // (col_num + 1)
+            #margin = (iw_width - col_num * (padded_cell_width + spacing) + spacing) // 2
+            #if col_num == 0:
+            #    col_num = 1
+            #    margin = 6
+            #self.iconview.set_columns(col_num)
+            #self.iconview.set_column_spacing(spacing)
+            #self.iconview.set_margin(margin)
 
     def vadj_percent_handler(self, store=False, restore=False):
         """Store and restore adjustment percentual value."""
@@ -1029,11 +1005,23 @@ class PdfArranger(Gtk.Application):
 
     def confirm_dialog(self, msg, action):
         """A dialog for confirmation of an action."""
-        d = Gtk.MessageDialog(self.window, 0, Gtk.MessageType.WARNING, Gtk.ButtonsType.NONE, msg)
-        d.add_buttons(action, 1, _('_Cancel'), 2)
-        response = d.run()
-        d.destroy()
-        return response == 1
+        d = Gtk.AlertDialog()
+        d.set_message(action)
+        d.set_detail(msg)
+        d.set_buttons([_('Do_n’t Save'), _('_Cancel'), _('_Save')])
+        d.choose(self.window, callback=self.on_confirm_dialog)
+
+    def on_confirm_dialog(self, dialog, result):
+        button = dialog.choose_finish(result)
+        if button == 0:
+            # Don’t Save
+            pass
+        elif button == 1:
+            # Cancel
+            pass
+        elif button == 2:
+            # Save
+            pass
 
     def save_changes_dialog(self, msg):
         """A dialog which ask if changes should be saved."""
@@ -1126,7 +1114,7 @@ class PdfArranger(Gtk.Application):
         # Release Poppler.Document instances to unlock all temporary files
         self.pdfqueue = []
         gc.collect()
-        self.config.set_window_size(self.window.get_size())
+        self.config.set_window_size(self.window.get_size(Gtk.Orientation.HORIZONTAL), self.window.get_size(Gtk.Orientation.VERTICAL))
         self.config.set_maximized(self.window.is_maximized())
         self.config.set_zoom_level(round(self.zoom_level))
         self.config.save()
@@ -1158,72 +1146,69 @@ class PdfArranger(Gtk.Application):
         """Handles choosing a name for exporting """
         title = _('Save As…') if exportmode == 'ALL_TO_SINGLE' else _('Export…')
 
-        chooser = Gtk.FileChooserNative.new(title=title,
-                                        parent=self.window,
-                                        action=Gtk.FileChooserAction.SAVE,
-                                        accept_label=_("_Save"),
-                                        cancel_label=_("_Cancel"))
-        chooser.set_do_overwrite_confirmation(True)
+        chooser = Gtk.FileDialog.new()
+        chooser.set_title(title)
+        #chooser.set_do_overwrite_confirmation(True)
         if len(self.pdfqueue) > 0:
             f = self.save_file or self.pdfqueue[0].filename
             f_dir, basename = os.path.split(f)
             tempdir = f_dir.startswith(tempfile.gettempdir()) and f_dir.endswith(DOMAIN)
             if exportmode == 'ALL_TO_SINGLE':
                 if f.endswith(".pdf") and not tempdir:
-                    chooser.set_filename(f)  # Set name to existing file
+                    chooser.set_initial_name(f)  # Set name to existing file
             else:
                 shortname, ext = os.path.splitext(basename)
                 if self.export_file is None and tempdir:
                     shortname = ""
                 f = self.export_file or shortname + "-000" + ext
                 f = self.get_cnt_filename(f)
-                chooser.set_current_name(f)  # Set name to new file
-                chooser.set_current_folder(self.export_directory)
+                chooser.set_initial_name(f)  # Set name to new file
+                chooser.set_initial_folder(self.export_directory)
         filter_list = self.__create_filters(['pdf', 'all'])
-        for f in filter_list[1:]:
-            chooser.add_filter(f)
+        chooser.set_filters(filter_list)
 
-        response = chooser.run()
-        file_out = chooser.get_filename()
-        chooser.destroy()
-        if response == Gtk.ResponseType.ACCEPT:
-            root, ext = os.path.splitext(file_out)
-            if ext.lower() != '.pdf':
-                ext = '.pdf'
-                file_out = file_out + ext
-            files_out = [file_out]
-            if exportmode in ['ALL_TO_MULTIPLE', 'SELECTED_TO_MULTIPLE']:
-                s = self.iconview.get_selected_items()
-                len_files = len(self.model) if exportmode == 'ALL_TO_MULTIPLE' else len(s)
-                for i in range(1, len_files):
-                    files_out.append(self.get_cnt_filename(files_out[-1], need_cnt=True))
-                    if os.path.exists(files_out[i]):
-                        msg = (_('A file named "%s" already exists. Do you want to replace it?')
-                               % os.path.split(files_out[i])[1])
-                        replace = self.confirm_dialog(msg, _("Replace"))
-                        if not replace:
-                            return
-            self.save(exportmode, files_out)
-        else:
+        chooser.save(parent=self.window, callback=lambda dialog, result: self.on_pdf_export_chosen(dialog, result, exportmode))
+
+    def on_pdf_export_chosen(self, dialog, result, exportmode):
+        try:
+            file_out = dialog.save_finish(result)
+        except GLib.GError as e:
+            print(e)
             self.post_action = None
+            return
+        file_out = file_out.get_path()
+        root, ext = os.path.splitext(file_out)
+        if ext.lower() != '.pdf':
+            ext = '.pdf'
+            file_out = file_out + ext
+        files_out = [file_out]
+        if exportmode in ['ALL_TO_MULTIPLE', 'SELECTED_TO_MULTIPLE']:
+            s = self.iconview.get_selected_items()
+            len_files = len(self.model) if exportmode == 'ALL_TO_MULTIPLE' else len(s)
+            for i in range(1, len_files):
+                files_out.append(self.get_cnt_filename(files_out[-1], need_cnt=True))
+                if os.path.exists(files_out[i]):
+                    msg = (_('A file named "%s" already exists. Do you want to replace it?')
+                           % os.path.split(files_out[i])[1])
+                    replace = self.confirm_dialog(msg, _("Replace"))
+                    if not replace:
+                        return
+        self.save(exportmode, files_out)
 
-    def open_dialog(self, title):
-        chooser = Gtk.FileChooserNative.new(title=title,
-                                        parent=self.window,
-                                        action=Gtk.FileChooserAction.OPEN,
-                                        accept_label=_("_Open"),
-                                        cancel_label=_("_Cancel"))
+    def open_dialog(self, title, callback=None):
+        chooser = Gtk.FileDialog.new()
+        chooser.set_title(title)
         if self.import_directory is not None:
-            chooser.set_current_folder(self.import_directory)
-        chooser.set_select_multiple(True)
+            file = Gio.File.new_for_path(self.import_directory)
+            chooser.set_initial_folder(file)
         file_type_list = ['all', 'pdf']
         if len(img2pdf_supported_img) > 0:
             file_type_list = ['all', 'img2pdf', 'pdf']
         filter_list = self.__create_filters(file_type_list)
-        for f in filter_list:
-            chooser.add_filter(f)
+        chooser.set_filters(filter_list)
 
-        return chooser.run(), chooser
+        chooser.open_multiple(parent=self.window, callback=callback)
+        return chooser
 
     def on_action_new(self, _action=None, _param=None, _unknown=None, filenames=None):
         """Start a new instance."""
@@ -1254,19 +1239,27 @@ class PdfArranger(Gtk.Application):
 
     def on_action_open(self, _action, _param, _unknown):
         """Open new file(s)."""
-        response, chooser = self.open_dialog(_('Open…'))
+        chooser = self.open_dialog(_('Open…'), callback=self.on_opened)
 
-        if response == Gtk.ResponseType.ACCEPT:
-            if len(self.pdfqueue) > 0 or len(self.metadata) > 0:
-                self.on_action_new(filenames=chooser.get_filenames())
-            else:
-                adder = PageAdder(self)
-                filenames = chooser.get_filenames()
-                filenames = reversed(filenames) if os.name == 'nt' else filenames
-                for filename in filenames:
-                    adder.addpages(filename)
-                adder.commit(select_added=False, add_to_undomanager=True)
-        chooser.destroy()
+    def on_opened(self, dialog, result):
+        try:
+            files = dialog.open_multiple_finish(result)
+        except GLib.GError as e:
+            print(e)
+            return
+        filenames = []
+        for i in range(files.get_n_items()):
+            file = files[i]
+            filenames.append(file.get_path())
+
+        if len(self.pdfqueue) > 0 or len(self.metadata) > 0:
+            self.on_action_new(filenames=filenames)
+        else:
+            adder = PageAdder(self)
+            filenames = reversed(filenames) if os.name == 'nt' else filenames
+            for filename in filenames:
+                adder.addpages(filename)
+            adder.commit(select_added=False, add_to_undomanager=True)
 
     def on_action_save(self, _action, _param, _unknown):
         self.save_or_choose()
@@ -1318,10 +1311,10 @@ class PdfArranger(Gtk.Application):
         sw = Gtk.ScrolledWindow(margin=6)
         label = Gtk.Label(msg, wrap=True, margin=6, xalign=0.0, selectable=True)
         sw.add(label)
-        d.vbox.pack_start(sw, False, False, 0)
+        d.get_content_area().append(sw)
         cb = Gtk.CheckButton(_("Don't show warnings when saving again."), margin=6, can_focus=False)
-        d.vbox.pack_start(cb, False, False, 0)
-        d.show_all()
+        d.get_content_area().append(cb)
+        d.show()
         sw.set_min_content_height(min(150, label.get_allocated_height()))
         cb.set_can_focus(True)
         d.run()
@@ -1365,16 +1358,16 @@ class PdfArranger(Gtk.Application):
         ctxt_id = self.status_bar2.get_context_id("saving")
         if enable:
             self.status_bar2.push(ctxt_id, message)
-            cursor = Gdk.Cursor.new_from_name(Gdk.Display.get_default(), 'wait')
+            cursor = 'wait'
             self.quit_rendering()
         else:
             self.status_bar2.remove_all(ctxt_id)
-            cursor = Gdk.Cursor.new_from_name(Gdk.Display.get_default(), 'default')
+            cursor = 'default'
             self.window_focus_in_out_event()
             self.iv_selection_changed_event()
             self.silent_render()
             self.iconview.grab_focus()
-        self.iconview.get_window().set_cursor(cursor)
+        self.iconview.set_cursor_from_name(cursor)
 
     def choose_export_selection_pdf_name(self, _action, mode, _unknown):
         exportmodes = {0: 'ALL_TO_SINGLE',
@@ -1389,16 +1382,24 @@ class PdfArranger(Gtk.Application):
 
     def on_action_import(self, _action, _param, _unknown):
         """Import doc"""
-        response, chooser = self.open_dialog(_('Import…'))
+        chooser = self.open_dialog(_('Import…'), callback=self.on_imported)
 
-        if response == Gtk.ResponseType.ACCEPT:
-            adder = PageAdder(self)
-            filenames = chooser.get_filenames()
-            filenames = reversed(filenames) if os.name == 'nt' else filenames
-            for filename in filenames:
-                adder.addpages(filename)
-            adder.commit(select_added=False, add_to_undomanager=True)
-        chooser.destroy()
+    def on_imported(self, dialog, result):
+        try:
+            files = dialog.open_multiple_finish(result)
+        except GLib.GError as e:
+            print(e)
+            return
+        filenames = []
+        for i in range(files.get_n_items()):
+            file = files[i]
+            filenames.append(file.get_path())
+
+        adder = PageAdder(self)
+        filenames = reversed(filenames) if os.name == 'nt' else filenames
+        for filename in filenames:
+            adder.addpages(filename)
+        adder.commit(select_added=False, add_to_undomanager=True)
 
     def clear_selected(self, add_to_undomanager=True):
         """Removes the selected elements in the IconView"""
@@ -2296,6 +2297,7 @@ class PdfArranger(Gtk.Application):
     def window_focus_in_out_event(self, _widget=None, _event=None):
         """Keyboard focus enter or leave window."""
         # Enable or disable paste actions based on clipboard content
+        return
         text = self.clipboard.wait_is_text_available()
         image = len(img2pdf_supported_img) > 0 and self.clipboard.wait_is_image_available()
         if self.window.lookup_action("paste"):  # Prevent error when closing with Alt+F4

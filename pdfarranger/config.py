@@ -138,13 +138,15 @@ class Config(object):
         return False
 
     def window_size(self):
-        ds = Gdk.Screen.get_default()
-        return self.data.getint('window', 'width', fallback=int(min(700, ds.get_width() / 2))), \
-            self.data.getint('window', 'height', fallback=int(min(600, ds.get_height() - 50)))
+        display = Gdk.Display.get_default()
+        monitors = display.get_monitors()
+        ds = monitors[0].get_geometry()
+        return self.data.getint('window', 'width', fallback=int(min(700, ds.width / 2))), \
+            self.data.getint('window', 'height', fallback=int(min(600, ds.height - 50)))
 
-    def set_window_size(self, size):
-        self.data.set('window', 'width', str(size[0]))
-        self.data.set('window', 'height', str(size[1]))
+    def set_window_size(self, width, height):
+        self.data.set('window', 'width', str(width))
+        self.data.set('window', 'height', str(height))
 
     def maximized(self):
         return self.data.getboolean('window', 'maximized', fallback=False)

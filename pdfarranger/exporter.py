@@ -568,19 +568,19 @@ def generate_booklet(pdfqueue, tmp_dir, pages):
 
 class PrintSettingsWidget(Gtk.Grid):
     def __init__(self, scale_mode, auto_rotate):
-        super().__init__(margin=0, row_spacing=6, column_spacing=12, border_width=12)
-        lbl = Gtk.Label(_("Scale mode:"), margin=0)
-        self.combo = Gtk.ComboBoxText(margin=0)
+        super().__init__(row_spacing=6, column_spacing=12)
+        lbl = Gtk.Label.new(_("Scale mode:"))
+        self.combo = Gtk.ComboBoxText()
         self.combo.append("NONE", _("None"))
         self.combo.append("PRINTABLE", _("Fit to Printable Area"))
         self.combo.append("FULL", _("Fit to Full Page"))
         self.combo.set_active_id(scale_mode)
-        self.cb = Gtk.CheckButton(label=_("Auto Rotate"), margin=0)
+        self.cb = Gtk.CheckButton(label=_("Auto Rotate"))
         self.cb.set_active(auto_rotate)
         self.attach(lbl, 0, 1, 1, 1)
         self.attach(self.combo, 1, 1, 2, 1)
         self.attach(self.cb, 0, 2, 2, 1)
-        self.show_all()
+        self.show()
 
     def get_scale_mode(self):
         return self.combo.get_active_id()
