@@ -135,7 +135,7 @@ if not check_gtk_schema_exists():
     print('ERROR: Found no schema files. You may need to set GSETTINGS_SCHEMA_DIR.', file=sys.stderr)
 
 def _set_language_locale():
-    lang = Config(DOMAIN).language()
+    lang = Config(DOMAIN, None).language()
     if os.name == 'nt':
         if not lang:
             winlang = ctypes.windll.kernel32.GetUserDefaultUILanguage()
@@ -239,7 +239,7 @@ class PdfArranger(Gtk.Application):
         # Defining instance attributes
 
         # The None values will be set later in do_activate
-        self.config = Config(DOMAIN)
+        self.config = Config(DOMAIN, self)
         self.uiXML = None
         self.window = None
         self.sw = None
@@ -498,8 +498,7 @@ class PdfArranger(Gtk.Application):
         self.silent_render()
 
     def on_action_preferences(self, _action, _option, _unknown):
-        adw_available = True if Adw else False
-        self.config.preferences_dialog(self.window, localedir, adw_available)
+        self.config.preferences_dialog(self.window, localedir)
         self.set_color_scheme()
 
     def on_action_print(self, _action, _option, _unknown):
@@ -655,6 +654,11 @@ class PdfArranger(Gtk.Application):
         }
         scrolledwindow overshoot {
             background: none;
+        }
+        frame.no-border {
+            border-style: none;
+            margin: 64px;
+            margin-top: 32px;
         }
         """
         style_provider.load_from_data(bytes(css_data.encode()))

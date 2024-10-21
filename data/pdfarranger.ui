@@ -215,4 +215,89 @@ Outlines and links can be preserved only in certain cases. For more info see &lt
       </object>
     </property>
   </object>
+  <object class="AdwPreferencesDialog" id="preferences">
+    <property name="title" translatable="yes">Preferences</property>
+    <child>
+      <object class="GtkBox">
+        <property name="orientation">vertical</property>
+        <child>
+          <object class="AdwHeaderBar"/>
+        </child>
+        <child>
+          <object class="AdwPreferencesPage">
+            <child>
+              <object class="AdwPreferencesGroup">
+                <property name="title" translatable="yes">General</property>
+                <child>
+                  <object class="AdwComboRow" id="languages">
+                    <property name="title" translatable="yes">Language</property>
+                    <property name="subtitle" translatable="yes">Requires restart</property>
+                    <property name="model">
+                      <object class="GtkStringList">
+                        <items>
+                          <item translatable="yes">System setting</item>
+                        </items>
+                      </object>
+                    </property>
+                  </object>
+                </child>
+                <child>
+                  <object class="AdwComboRow" id="theme">
+                    <property name="title" translatable="yes">Theme</property>
+                    <property name="model">
+                      <object class="GtkStringList">
+                        <items>
+                          <item translatable="yes">System setting</item>
+                          <item translatable="yes">Light</item>
+                          <item translatable="yes">Dark</item>
+                        </items>
+                      </object>
+                    </property>
+                  </object>
+                </child>
+              </object>
+            </child>
+            <child>
+              <object class="AdwPreferencesGroup">
+                <property name="title" translatable="yes">Printing</property>
+                <child>
+                  <object class="AdwComboRow" id="scale-mode">
+                    <property name="title" translatable="yes">Scale mode</property>
+                    <property name="model">
+                      <object class="GtkStringList">
+                        <items>
+                          <item translatable="yes">None</item>
+                          <item translatable="yes">Fit to printable area</item>
+                          <item translatable="yes">Fit to full page</item>
+                        </items>
+                      </object>
+                    </property>
+                  </object>
+                </child>
+                <child>
+                  <object class="AdwSwitchRow" id="auto-rotate">
+                    <property name="title" translatable="yes">Auto rotate</property>
+                  </object>
+                </child>
+              </object>
+            </child>
+          </object>
+        </child>
+        <child>
+          <object class="GtkFrame">
+            <style>
+              <class name="no-border"/>
+            </style>
+            <property name="label" translatable="yes">For more options see:</property>
+            <child>
+              <object class="GtkLabel">
+                <property name="selectable">yes</property>
+                <property name="label">/home/linkmauve/config/pdfarranger/config.ini</property>
+              </object>
+            </child>
+          </object>
+        </child>
+      </object>
+    </child>
+  </object>
 </interface>

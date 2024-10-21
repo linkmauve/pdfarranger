@@ -22,8 +22,6 @@ import gettext
 from gi.repository import Gdk
 from gi.repository import Gtk
 
-from .exporter import PrintSettingsWidget
-
 _ = gettext.gettext
 
 # See https://gitlab.gnome.org/GNOME/gtk/-/blob/3.24.23/gdk/keynames.txt for list of keys
@@ -108,7 +106,8 @@ class Config(object):
         os.makedirs(p, exist_ok=True)
         return os.path.join(p, 'config.ini')
 
-    def __init__(self, domain):
+    def __init__(self, domain, pdfarranger):
+        self.pdfarranger = pdfarranger
         self.domain = domain
         self.data = configparser.ConfigParser()
         self.data.add_section('window')
@@ -232,75 +231,64 @@ class Config(object):
             if k != "enable_custom"
         ]
 
-    def preferences_dialog(self, parent, localedir, handy_available):
+    def preferences_dialog(self, parent, localedir):
         """A dialog for some application preferences."""
-        d = Gtk.Dialog(title=_("Preferences"),
-                       parent=parent,
-                       flags=Gtk.DialogFlags.MODAL,
-                       buttons=(
-                           _("_Cancel"), Gtk.ResponseType.CANCEL,
-                           _("_OK"), Gtk.ResponseType.OK,
-                        ),
-                       )
-        d.set_resizable(False)
-        hbox = Gtk.Box(spacing=6, margin=8)
-        frame = Gtk.Frame(label=_("Language"), margin=8)
-        combo = Gtk.ComboBoxText(margin=8)
-        label = Gtk.Label(_("(Requires restart)"))
-        hbox.pack_start(combo, False, False, 8)
-        hbox.pack_start(label, False, False, 8)
-        frame.add(hbox)
-        d.vbox.pack_start(frame, False, False, 8)
-        hbox2 = Gtk.Box(spacing=6, margin=8)
-        frame2 = Gtk.Frame(label=_("Theme"), margin=8)
-        combo2 = Gtk.ComboBoxText(margin=8)
-        label2 = Gtk.Label("" if handy_available else _("(Libhandy missing)"))
-        hbox2.pack_start(combo2, False, False, 8)
-        hbox2.pack_start(label2, False, False, 8)
-        frame2.add(hbox2)
-        d.vbox.pack_start(frame2, False, False, 8)
-        frame3 = Gtk.Frame(label=_("Printing"), margin=8)
-        psettings = PrintSettingsWidget(self.scale_mode(), self.auto_rotate())
-        frame3.add(psettings)
-        d.vbox.pack_start(frame3, False, False, 8)
-        t = _("For more options see:")
-        frame4 = Gtk.Frame(label=t, shadow_type=Gtk.ShadowType.NONE, margin=8)
-        label4 = Gtk.Label(self._config_file(self.domain), selectable=True, margin=8)
-        frame4.add(label4)
-        d.vbox.pack_start(frame4, False, False, 8)
+        d = self.pdfarranger.uiXML.get_object('preferences')
+        combo = self.pdfarranger.uiXML.get_object('languages')
+        combo2 = self.pdfarranger.uiXML.get_object('theme')
+        scale_mode = self.pdfarranger.uiXML.get_object('scale-mode')
+        auto_rotate = self.pdfarranger.uiXML.get_object('auto-rotate')
 
         langs = []
         if os.path.isdir(localedir):
             langs = os.listdir(localedir)
         langs.append("en")
         langs.sort()
-        langs.insert(0, _("System setting"))
+        languages = combo.get_model()
         for lan in langs:
-            combo.append(None, lan)
+            languages.append(lan)
         lang = self.language()
         if lang in langs:
-            combo.set_active(langs.index(lang))
+            combo.set_selected(langs.index(lang) + 1)
         else:
-            combo.set_active(0)
-        themes = [_("System setting"), "light", "dark"]
-        for the in themes:
-            combo2.append(None, the)
-        theme = self.theme()
-        if theme in themes:
-            combo2.set_active(themes.index(theme))
-        else:
-            combo2.set_active(0)
-        combo2.set_sensitive(handy_available)
+            combo.set_selected(0)
+        combo.connect('notify::selected', lambda combo, _param: self.combo_changed(combo, langs))
 
-        d.show_all()
-        result = d.run()
-        if result == Gtk.ResponseType.OK:
-            num = combo.get_active()
-            language = langs[num] if num != 0 else ""
-            self.set_language(language)
-            num2 = combo2.get_active()
-            theme = themes[num2] if num2 != 0 else ""
-            self.set_theme(theme)
-            self.set_scale_mode(psettings.get_scale_mode())
-            self.set_auto_rotate(psettings.get_auto_rotate())
-        d.destroy()
+        theme = self.theme()
+        themes = ['', 'light', 'dark']
+        if theme in themes:
+            combo2.set_selected(themes.index(theme))
+        else:
+            combo2.set_selected(0)
+        combo2.connect('notify::selected', self.theme_changed)
+
+        scale_modes = ['NONE', 'PRINTABLE', 'FULL']
+        scale_mode.set_selected(scale_modes.index(self.scale_mode()))
+        scale_mode.connect('notify::selected', self.scale_mode_changed)
+
+        auto_rotate.set_active(self.auto_rotate())
+        auto_rotate.connect('notify::active', self.auto_rotate_changed)
+
+        d.present(parent)
+
+    def combo_changed(self, combo, langs):
+        selected = combo.get_selected()
+        if selected == 0:
+            self.set_language('')
+        else:
+            self.set_language(langs[selected - 1])
+
+    def theme_changed(self, combo, _param):
+        selected = combo.get_selected()
+        theme = ['', 'light', 'dark'][selected]
+        self.set_theme(theme)
+        self.pdfarranger.set_color_scheme()
+
+    def scale_mode_changed(self, combo, _param):
+        selected = combo.get_selected()
+        scale_mode = ['NONE', 'PRINTABLE', 'FULL'][selected]
+        self.set_scale_mode(scale_mode)
+
+    def auto_rotate_changed(self, combo, _param):
+        active = combo.get_active()
+        self.set_auto_rotate(active)
