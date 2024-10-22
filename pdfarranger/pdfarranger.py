@@ -2865,28 +2865,14 @@ class PdfArranger(Gtk.Application):
         GObject.idle_add(self.render)
 
     def content_loss_warning(self):
-        d = Gtk.Dialog(_("Note"),
-            parent=self.window,
-            flags=Gtk.DialogFlags.MODAL,
-            buttons=(_("_OK"), Gtk.ResponseType.OK),
-            resizable=False
-            )
-        m1 = _("Note the limitations:")
-        m2 = _("Cropping/hiding does not remove any content from the PDF file, it only hides it.")
-        m3 = _("Outlines and links can be preserved only in certain cases.")
-        link = "https://github.com/pdfarranger/pdfarranger/wiki/User-Manual"
-        section = "#preserving-of-outlines-and-links"
-        markup = (m1 + "\n\n" + m2 + "\n\n" + m3 + " " + _("For more info see") +
-                  " " + '<a href="' + link + section + '">' + _("User Manual") + "</a>")
-        label = Gtk.Label(label=markup, use_markup=True, max_width_chars=50, wrap=True, margin=12)
-        cb = Gtk.CheckButton(_("Do not show this dialog again."), can_focus=False, margin=12)
-        d.vbox.pack_start(label, False, False, 6)
-        d.vbox.pack_start(cb, False, False, 6)
-        d.show_all()
-        cb.set_can_focus(True)
-        d.run()
+        d = self.uiXML.get_object('content-loss-warning')
+        d.connect('closed', self.on_closed_content_loss_warning)
+        d.present(self.window)
+
+    def on_closed_content_loss_warning(self, dialog):
+        cb = self.uiXML.get_object('do-not-show-again')
         self.config.set_content_loss_warning(not cb.get_active())
-        d.destroy()
+        dialog.close()
 
     def about_dialog(self, _action, _parameter, _unknown):
         about_dialog = Gtk.AboutDialog()

@@ -197,4 +197,22 @@ along with PDF Arranger.  If not, see <http://www.gnu.org/licenses/>.
       </object>
     </child>
   </object>
+  <object class="AdwAlertDialog" id="content-loss-warning">
+    <property name="heading" translatable="yes">Note</property>
+    <property name="body-use-markup">1</property>
+    <property name="body" translatable="yes">Note the limitations:
+
+Cropping/hiding does not remove any content from the PDF file, it only hides it.
+
+Outlines and links can be preserved only in certain cases. For more info see &lt;a href=&quot;https://github.com/pdfarranger/pdfarranger/wiki/User-Manual#preserving-of-outlines-and-links&quot;&gt;User Manual&lt;/a&gt;</property>
+    <responses>
+      <response id="ok" translatable="yes">_OK</response>
+    </responses>
+    <property name="extra-child">
+      <object class="GtkCheckButton" id="do-not-show-again">
+        <property name="label" translatable="yes">_Do not show this dialog again.</property>
+        <property name="use-underline">1</property>
+      </object>
+    </property>
+  </object>
 </interface>
