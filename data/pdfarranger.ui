@@ -19,158 +19,158 @@ along with PDF Arranger.  If not, see <http://www.gnu.org/licenses/>.
 -->
 <interface>
   <requires lib="gtk" version="4.0"/>
-  <object class="GtkApplicationWindow" id="main_window">
-    <child type="titlebar">
-      <object class="GtkHeaderBar" id="header_bar">
-        <child type="start">
-          <object class="GtkBox">
-            <property name="homogeneous">1</property>
-            <style>
-              <class name="linked"/>
-            </style>
-            <child>
-              <object class="GtkButton">
-                <property name="focus_on_click">0</property>
-                <property name="tooltip_text" translatable="1">Open</property>
-                <property name="action_name">win.open</property>
-                <child>
-                  <object class="GtkImage">
-                    <property name="icon_name">document-open-symbolic</property>
-                    <property name="use_fallback">1</property>
-                  </object>
-                </child>
-              </object>
-            </child>
-            <child>
-              <object class="GtkButton">
-                <property name="focus_on_click">0</property>
-                <property name="tooltip_text" translatable="1">Import</property>
-                <property name="action_name">win.import</property>
-                <child>
-                  <object class="GtkImage">
-                    <property name="icon_name">insert-image-symbolic</property>
-                    <property name="use_fallback">1</property>
-                  </object>
-                </child>
-              </object>
-            </child>
-            <child>
-              <object class="GtkButton">
-                <property name="tooltip_text" translatable="1">Save</property>
-                <property name="action_name">win.save</property>
-                <child>
-                  <object class="GtkImage">
-                    <property name="icon_name">document-save-symbolic</property>
-                  </object>
-                </child>
-              </object>
-            </child>
-            <child>
-              <object class="GtkButton" id="save_as_bar_button">
-                <property name="tooltip_text" translatable="1">Save As</property>
-                <property name="action_name">win.save-as</property>
-                <child>
-                  <object class="GtkImage">
-                    <property name="icon_name">document-save-as-symbolic</property>
-                  </object>
-                </child>
-              </object>
-            </child>
-          </object>
-        </child>
-        <child type="end">
-          <object class="GtkMenuButton" id="main_menu_button">
-            <property name="tooltip_text" translatable="1">Main Menu</property>
-            <child>
-              <object class="GtkImage">
-                <property name="icon_name">open-menu-symbolic</property>
-              </object>
-            </child>
-          </object>
-        </child>
-        <child type="end">
-          <object class="GtkBox">
-            <property name="homogeneous">1</property>
-            <style>
-              <class name="linked"/>
-            </style>
-            <child>
-              <object class="GtkButton">
-                <property name="focus_on_click">0</property>
-                <property name="tooltip_text" translatable="1">Zoom In</property>
-                <property name="action_name">win.zoom-in</property>
-                <child>
-                  <object class="GtkImage">
-                    <property name="icon_name">zoom-in-symbolic</property>
-                  </object>
-                </child>
-                <style>
-                  <class name="image-button"/>
-                </style>
-              </object>
-            </child>
-            <child>
-              <object class="GtkButton">
-                <property name="focus_on_click">0</property>
-                <property name="tooltip_text" translatable="1">Zoom Out</property>
-                <property name="action_name">win.zoom-out</property>
-                <child>
-                  <object class="GtkImage">
-                    <property name="icon_name">zoom-out-symbolic</property>
-                  </object>
-                </child>
-                <style>
-                  <class name="image-button"/>
-                </style>
-              </object>
-            </child>
-          </object>
-        </child>
-        <child type="end">
-          <object class="GtkBox">
-            <property name="homogeneous">1</property>
-            <style>
-              <class name="linked"/>
-            </style>
-            <child>
-              <object class="GtkButton">
-                <property name="focus_on_click">0</property>
-                <property name="tooltip_text" translatable="1">Rotate Left</property>
-                <property name="action_name">win.rotate</property>
-                <property name="action_target">-90</property>
-                <child>
-                  <object class="GtkImage">
-                    <property name="icon_name">object-rotate-left-symbolic</property>
-                  </object>
-                </child>
-                <style>
-                  <class name="image-button"/>
-                </style>
-              </object>
-            </child>
-            <child>
-              <object class="GtkButton">
-                <property name="focus_on_click">0</property>
-                <property name="tooltip_text" translatable="1">Rotate Right</property>
-                <property name="action_name">win.rotate</property>
-                <property name="action_target">90</property>
-                <child>
-                  <object class="GtkImage">
-                    <property name="icon_name">object-rotate-right-symbolic</property>
-                  </object>
-                </child>
-                <style>
-                  <class name="image-button"/>
-                </style>
-              </object>
-            </child>
-          </object>
-        </child>
-      </object>
-    </child>
+  <object class="AdwApplicationWindow" id="main_window">
     <child>
       <object class="GtkBox" id="main_box">
         <property name="orientation">vertical</property>
+        <child>
+          <object class="AdwHeaderBar" id="header_bar">
+            <child type="start">
+              <object class="GtkBox">
+                <property name="homogeneous">1</property>
+                <style>
+                  <class name="linked"/>
+                </style>
+                <child>
+                  <object class="GtkButton">
+                    <property name="focus_on_click">0</property>
+                    <property name="tooltip_text" translatable="1">Open</property>
+                    <property name="action_name">win.open</property>
+                    <child>
+                      <object class="GtkImage">
+                        <property name="icon_name">document-open-symbolic</property>
+                        <property name="use_fallback">1</property>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="focus_on_click">0</property>
+                    <property name="tooltip_text" translatable="1">Import</property>
+                    <property name="action_name">win.import</property>
+                    <child>
+                      <object class="GtkImage">
+                        <property name="icon_name">insert-image-symbolic</property>
+                        <property name="use_fallback">1</property>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="tooltip_text" translatable="1">Save</property>
+                    <property name="action_name">win.save</property>
+                    <child>
+                      <object class="GtkImage">
+                        <property name="icon_name">document-save-symbolic</property>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkButton" id="save_as_bar_button">
+                    <property name="tooltip_text" translatable="1">Save As</property>
+                    <property name="action_name">win.save-as</property>
+                    <child>
+                      <object class="GtkImage">
+                        <property name="icon_name">document-save-as-symbolic</property>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+              </object>
+            </child>
+            <child type="end">
+              <object class="GtkMenuButton" id="main_menu_button">
+                <property name="tooltip_text" translatable="1">Main Menu</property>
+                <child>
+                  <object class="GtkImage">
+                    <property name="icon_name">open-menu-symbolic</property>
+                  </object>
+                </child>
+              </object>
+            </child>
+            <child type="end">
+              <object class="GtkBox">
+                <property name="homogeneous">1</property>
+                <style>
+                  <class name="linked"/>
+                </style>
+                <child>
+                  <object class="GtkButton">
+                    <property name="focus_on_click">0</property>
+                    <property name="tooltip_text" translatable="1">Zoom In</property>
+                    <property name="action_name">win.zoom-in</property>
+                    <child>
+                      <object class="GtkImage">
+                        <property name="icon_name">zoom-in-symbolic</property>
+                      </object>
+                    </child>
+                    <style>
+                      <class name="image-button"/>
+                    </style>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="focus_on_click">0</property>
+                    <property name="tooltip_text" translatable="1">Zoom Out</property>
+                    <property name="action_name">win.zoom-out</property>
+                    <child>
+                      <object class="GtkImage">
+                        <property name="icon_name">zoom-out-symbolic</property>
+                      </object>
+                    </child>
+                    <style>
+                      <class name="image-button"/>
+                    </style>
+                  </object>
+                </child>
+              </object>
+            </child>
+            <child type="end">
+              <object class="GtkBox">
+                <property name="homogeneous">1</property>
+                <style>
+                  <class name="linked"/>
+                </style>
+                <child>
+                  <object class="GtkButton">
+                    <property name="focus_on_click">0</property>
+                    <property name="tooltip_text" translatable="1">Rotate Left</property>
+                    <property name="action_name">win.rotate</property>
+                    <property name="action_target">-90</property>
+                    <child>
+                      <object class="GtkImage">
+                        <property name="icon_name">object-rotate-left-symbolic</property>
+                      </object>
+                    </child>
+                    <style>
+                      <class name="image-button"/>
+                    </style>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="focus_on_click">0</property>
+                    <property name="tooltip_text" translatable="1">Rotate Right</property>
+                    <property name="action_name">win.rotate</property>
+                    <property name="action_target">90</property>
+                    <child>
+                      <object class="GtkImage">
+                        <property name="icon_name">object-rotate-right-symbolic</property>
+                      </object>
+                    </child>
+                    <style>
+                      <class name="image-button"/>
+                    </style>
+                  </object>
+                </child>
+              </object>
+            </child>
+          </object>
+        </child>
         <child>
           <object class="GtkScrolledWindow" id="scrolledwindow">
             <property name="vexpand">1</property>

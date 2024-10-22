@@ -213,7 +213,7 @@ def get_file_path_from_uri(uri):
     return path
 
 
-class PdfArranger(Gtk.Application):
+class PdfArranger(Adw.Application):
     # Drag and drop ID for pages coming from the same pdfarranger instance
     MODEL_ROW_INTERN = 1001
     # Drag and drop ID for pages coming from an other pdfarranger instance
@@ -341,32 +341,13 @@ class PdfArranger(Gtk.Application):
         Adw.StyleManager.get_default().set_color_scheme(scheme)
 
     def __create_main_window(self):
-        """Create the Gtk.ApplicationWindow or Adw.ApplicationWindow"""
-        b = Gtk.Builder()
+        """Create the Adw.ApplicationWindow"""
+        b = Gtk.Builder.new_from_file(self.__resource_path(DOMAIN + ".ui"))
         b.set_translation_domain(DOMAIN)
-        with open(self.__resource_path(DOMAIN + ".ui")) as ff:
-            s = ff.read()
-            if Adw:
-                Adw.init()
-                s = s.replace("GtkHeaderBar", "AdwHeaderBar")
-            b.add_from_string(s)
         #b.connect_signals(self)
         self.uiXML = b
+        self.set_color_scheme()
         self.window = self.uiXML.get_object("main_window")
-        if Adw:
-            self.set_color_scheme()
-            # Add an intermediate vertical box
-            box = Gtk.Box()
-            box.props.orientation = Gtk.Orientation.VERTICAL
-            hd = self.uiXML.get_object("header_bar")
-            mb = self.uiXML.get_object("main_box")
-            self.window.set_titlebar(None)
-            self.window.set_child(None)
-            # Replace the Gtk.ApplicationWindow by the Adw one
-            self.window = Adw.ApplicationWindow()
-            box.append(hd)
-            box.append(mb)
-            self.window.set_content(box)
         self.window.set_default_icon_name(ICON_ID)
         return b
 
