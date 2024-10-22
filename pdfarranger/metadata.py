@@ -25,6 +25,7 @@ from datetime import datetime
 from dateutil import parser
 import gi
 from gi.repository import Gtk
+from gi.repository import Adw
 from gi.repository import Pango
 _ = gettext.gettext
 
@@ -198,13 +199,11 @@ def edit(metadata, pdffiles, parent):
     :param pdffiles: A list of PDF from witch to take the initial meta data
     :param parent: The parent window
     """
-    dialog = Gtk.Dialog(title=_('Edit properties'),
-                        parent=parent,
-                        flags=Gtk.DialogFlags.MODAL,
-                        buttons=(_("_Cancel"), Gtk.ResponseType.CANCEL,
-                                 _("_OK"), Gtk.ResponseType.OK))
-    ok_button = dialog.get_widget_for_response(response_id = Gtk.ResponseType.OK)
-    ok_button.grab_focus()
+    dialog = Adw.AlertDialog(title=_('Edit properties'))
+    dialog.add_response('cancel', _('_Cancel'))
+    dialog.add_response('ok', _('_OK'))
+    dialog.set_response_appearance("ok", Adw.ResponseAppearance.SUGGESTED)
+    dialog.set_heading(_('Edit properties'))
     # Property, Value, XMP name (hidden)
     liststore = Gtk.ListStore(str, str, str)
     mergedmetadata = merge(metadata, pdffiles)
@@ -225,15 +224,16 @@ def edit(metadata, pdffiles, parent):
             renderer.connect("editing-canceled", handler.canceled)
         column = Gtk.TreeViewColumn(title, renderer, text=i)
         treeview.append_column(column)
-    treeview.props.margin = 12
     treeview.set_enable_search(False)
     treeview.set_cursor(Gtk.TreePath(0), treeview.get_column(1), True)
-    dialog.vbox.pack_start(treeview, True, True, 0)
-    dialog.show_all()
-    result = dialog.run()
-    r = result == Gtk.ResponseType.OK
-    dialog.destroy()
-    if r:
+    dialog.set_extra_child(treeview)
+    dialog.choose(parent, callback=lambda dialog, result: edit_done(dialog, result, parent, metadata, handler))
+
+def edit_done(dialog, result, parent, metadata, handler):
+    response = dialog.choose_finish(result)
+    if response == 'ok':
+        treeview = dialog.get_extra_child()
+        liststore = treeview.get_model()
         for row in liststore:
             # Capture invalid input when the emission of the edited signal is
             # bypassed by pressing OK while editing.
@@ -241,4 +241,3 @@ def edit(metadata, pdffiles, parent):
                 row[1] = handler._parse_date(row[1], parent)
 
             metadata[row[2]] = _strtometa(row[1], row[2])
-    return r
