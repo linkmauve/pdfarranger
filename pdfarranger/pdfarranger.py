@@ -2875,11 +2875,8 @@ class PdfArranger(Gtk.Application):
         dialog.close()
 
     def about_dialog(self, _action, _parameter, _unknown):
-        about_dialog = Gtk.AboutDialog()
-        about_dialog.set_transient_for(self.window)
-        about_dialog.set_modal(True)
-        about_dialog.set_name(APPNAME)
-        about_dialog.set_program_name(APPNAME)
+        about_dialog = Adw.AboutDialog()
+        about_dialog.set_application_name(APPNAME)
         about_dialog.set_version(VERSION)
         pike = pikepdf.__version__
         qpdf = pikepdf.__libqpdf_version__
@@ -2902,16 +2899,13 @@ class PdfArranger(Gtk.Application):
                 )
             )
         )
-        about_dialog.set_authors(['Konstantinos Poulios'])
-        about_dialog.add_credit_section(_('Maintainers and contributors'), [
-            'https://github.com/pdfarranger/pdfarranger/graphs/contributors'])
+        about_dialog.set_developers(['Konstantinos Poulios'])
+        about_dialog.add_link(_('Maintainers and contributors'), 'https://github.com/pdfarranger/pdfarranger/graphs/contributors')
         about_dialog.set_website(WEBSITE)
-        about_dialog.set_website_label(WEBSITE)
-        about_dialog.set_logo_icon_name(ICON_ID)
-        about_dialog.set_license(_('GNU General Public License (GPL) Version 3.'))
-        about_dialog.connect('response', lambda w, *args: w.destroy())
-        about_dialog.connect('delete_event', lambda w, *args: w.destroy())
-        about_dialog.show_all()
+        about_dialog.set_application_icon(ICON_ID)
+        about_dialog.set_issue_url("https://github.com/pdfarranger/pdfarranger/issues")
+        about_dialog.set_license_type(Gtk.License.GPL_3_0_ONLY)
+        about_dialog.present(self.window)
 
     def update_statusbar(self):
         selection = self.iconview.get_selected_items()
