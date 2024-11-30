@@ -2917,13 +2917,9 @@ class PdfArranger(Adw.Application):
             self.window.lookup_action(a).set_enabled(num_pages > 0)
 
     def error_message_dialog(self, msg):
-        error_msg_dlg = Gtk.MessageDialog(flags=Gtk.DialogFlags.MODAL,
-                                          type=Gtk.MessageType.ERROR, parent=self.window,
-                                          message_format=str(msg),
-                                          buttons=Gtk.ButtonsType.OK)
-        response = error_msg_dlg.run()
-        if response == Gtk.ResponseType.OK:
-            error_msg_dlg.destroy()
+        error_msg_dlg = Adw.AlertDialog.new(None, str(msg))
+        error_msg_dlg.add_response('ok', _('OK'))
+        error_msg_dlg.present(self.window)
 
 
 def main():
