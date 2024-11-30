@@ -15,28 +15,17 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 from gi.repository import Gtk
+from gi.repository import Adw
 import gettext
 
 _ = gettext.gettext
 
-class Dialog(Gtk.Dialog):
+class Dialog(Adw.AlertDialog):
     """ A dialog box to split pages into a grid of pages"""
-    def __init__(self, window):
-        super().__init__(
-            title=_("Split Pages"),
-            parent=window,
-            flags=Gtk.DialogFlags.MODAL,
-            buttons=(
-                "_Cancel",
-                Gtk.ResponseType.CANCEL,
-                "_OK",
-                Gtk.ResponseType.OK,
-            ),
-        )
-        buttonbox = self.get_action_area()
-        buttons = buttonbox.get_children()
-        self.set_focus(buttons[1])
-        self.set_resizable(False)
+    def __init__(self):
+        super().__init__(heading=_("Split Pages"))
+        self.add_response('cancel', _('_Cancel'))
+        self.add_response('ok', _('_OK'))
         self.split_count = {'vertical' : 2, 'horizontal' : 1}
         self.even_splits = {'vertical' : True, 'horizontal' : True}
         self.vmodel = Gtk.ListStore(int, int)
@@ -50,11 +39,12 @@ class Dialog(Gtk.Dialog):
         self.checkbuttons = {'vertical' : self.vcheck, 'horizontal' : self.hcheck}
 
         hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
-        self.vbox.pack_start(hbox, True, True, 0)
+        hbox.props.height_request = 200
+        self.set_extra_child(hbox)
         for direction in ['vertical', 'horizontal']:
             frame = self._build_frame(direction)
-            hbox.pack_start(frame, True, True, 0)
-        self.show_all()
+            hbox.append(frame)
+        self.show()
 
     def _build_frame(self, direction):
         frame_txt = {'vertical' : _("Columns"), 'horizontal' : _("Rows")}
@@ -62,16 +52,11 @@ class Dialog(Gtk.Dialog):
         checkbutton_txt = {'vertical' : _("Equal column width"), 'horizontal' : _("Equal row height")}
 
         frame = Gtk.Frame(label=frame_txt[direction])
-        frame.props.margin = 8
-        frame.props.margin_bottom = 0
         grid = Gtk.Grid()
-        frame.add(grid)
-        label = Gtk.Label(label_txt[direction])
-        label.set_alignment(0.0, 0.5)
-        label.props.margin = 8
-        label.props.margin_bottom = 6
+        frame.set_child(grid)
+        label = Gtk.Label.new(label_txt[direction])
         grid.attach(label, 0, 0, width=1, height=1)
-        adjustment = Gtk.Adjustment(value=self.split_count[direction], lower=1, upper=10, step_incr=1)
+        adjustment = Gtk.Adjustment(value=self.split_count[direction], lower=1, upper=10, step_increment=1)
         self.spinbuttons[direction].set_adjustment(adjustment)
         self.spinbuttons[direction].connect("value-changed", self._update_split, direction)
         grid.attach(self.spinbuttons[direction], 1, 0, width=1, height=1)
@@ -198,14 +183,3 @@ class Dialog(Gtk.Dialog):
             crops[i] = (start, end)
         crops[-1] = (1.0 - size, 1.0)
         return crops
-
-
-    def run_get(self):
-        result = self.run()
-        vcrops = None
-        hcrops = None
-        if result == Gtk.ResponseType.OK:
-            vcrops = self._crops('vertical')
-            hcrops = self._crops('horizontal')
-        self.destroy()
-        return vcrops, hcrops

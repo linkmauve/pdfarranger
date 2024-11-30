@@ -2483,8 +2483,15 @@ class PdfArranger(Adw.Application):
 
     def split_pages(self, _action, _parameter, _unknown):
         """ Split selected pages """
-        diag = splitter.Dialog(self.window)
-        leftcrops, topcrops = diag.run_get()
+        diag = splitter.Dialog()
+        diag.choose(self.window, callback=self.on_split_pages)
+
+    def on_split_pages(self, diag, result):
+        response = diag.choose_finish(result)
+        if response != 'ok':
+            return
+        leftcrops = diag._crops('vertical')
+        topcrops = diag._crops('horizontal')
         if leftcrops is None or topcrops is None:
             return
         model = self.iconview.get_model()
