@@ -1008,14 +1008,16 @@ class PdfArranger(Adw.Application):
             # Save
             pass
 
-    def save_changes_dialog(self, msg):
+    def save_changes_dialog(self, msg, callback):
         """A dialog which ask if changes should be saved."""
-        d = Gtk.MessageDialog(self.window, 0, Gtk.MessageType.WARNING, Gtk.ButtonsType.NONE, msg)
-        d.format_secondary_markup(_("Your changes will be lost if you don’t save them."))
-        d.add_buttons(_('Do_n’t Save'), 1, _('_Cancel'), 2, _('_Save'), 3)
-        response = d.run()
-        d.destroy()
-        return response
+        d = Adw.AlertDialog.new(msg, _("Your changes will be lost if you don’t save them."))
+        d.add_response('save', _('_Save'))
+        d.add_response('cancel', _('_Cancel'))
+        d.add_response('no', _('Do_n’t Save'))
+        d.set_default_response('save')
+        d.set_response_appearance('save', Adw.ResponseAppearance.SUGGESTED)
+        d.set_response_appearance('no', Adw.ResponseAppearance.DESTRUCTIVE)
+        d.choose(self.window, callback=callback)
 
     def on_action_close(self, _action, _param, _unknown):
         """Close all files and restore initial state."""
@@ -1031,13 +1033,16 @@ class PdfArranger(Adw.Application):
                     msg = msg.format(os.path.basename(self.save_file))
                 else:
                     msg = _('Save changes before closing?')
-                response = self.save_changes_dialog(msg)
-                if response == 3:
-                    self.post_action = 'CLEAR_DATA'
-                    self.save_or_choose()
-                    return
-                elif response != 1:
-                    return
+                self.save_changes_dialog(msg, callback=self.on_on_action_close)
+
+    def on_on_action_close(self, dialog, result):
+        response = dialog.choose_finish(result)
+        if response == 'cancel':
+            return
+        if response == 'save':
+            self.post_action = 'CLEAR_DATA'
+            self.save_or_choose()
+            return
         self.clear_data()
 
     def clear_data(self):
